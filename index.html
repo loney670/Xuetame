@@ -234,6 +234,37 @@ li.mine{background:linear-gradient(90deg,rgba(245,194,66,.25),transparent)}
 .mc.o.bomb{background:radial-gradient(circle at 50% 38%,#4d0d1a,#14040a);box-shadow:inset 0 0 0 1.5px rgba(255,70,70,.6)}
 #osx .eg,#osx .eb{width:1.4em;height:1.4em;vertical-align:-.4em}
 #otitle .eg{width:1.3em;height:1.3em}
+
+/* ---- окно результата (красивое) ---- */
+#res{backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);z-index:50;animation:rfade .25s ease}
+#res>div{position:relative;overflow:hidden;animation:rpop .45s cubic-bezier(.2,1.3,.4,1)}
+#res>div::before{content:"";position:absolute;left:50%;top:-70px;width:260px;height:260px;transform:translateX(-50%);background:radial-gradient(circle,rgba(245,194,66,.35),transparent 65%);pointer-events:none}
+#res>div.warn::before{background:radial-gradient(circle,rgba(255,170,60,.28),transparent 65%)}
+#res>div.err::before,#res>div.lose::before{background:radial-gradient(circle,rgba(255,92,122,.3),transparent 65%)}
+#res>div>*{position:relative}
+#res .ri{width:84px;height:84px;margin:0 auto 12px;border-radius:50%;display:grid;place-items:center;font-size:42px;background:radial-gradient(circle at 35% 30%,#2a2236,#100c18);border:1.5px solid rgba(245,194,66,.6);box-shadow:0 0 24px rgba(245,194,66,.3);animation:rbob 2.4s ease-in-out infinite}
+#res .ri .eg{width:52px;height:52px;vertical-align:0}
+#res>div.warn .ri{border-color:rgba(255,170,60,.7);box-shadow:0 0 24px rgba(255,170,60,.28)}
+#res>div.err .ri,#res>div.lose .ri{border-color:rgba(255,92,122,.7);box-shadow:0 0 24px rgba(255,92,122,.28)}
+#res h1{background:linear-gradient(180deg,var(--gold2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;font-size:34px;margin-bottom:6px}
+#res>div.warn h1{background:linear-gradient(180deg,#FFD9A0,#FF9F43);-webkit-background-clip:text;background-clip:text}
+#res>div.err h1,#res>div.lose h1{background:linear-gradient(180deg,#FFC2CD,#FF5C7A);-webkit-background-clip:text;background-clip:text}
+#res p{color:var(--cream)}
+#res #r2.big{font-size:44px;font-weight:900;line-height:1.1;color:var(--gold2);text-shadow:0 0 22px rgba(245,194,66,.45);margin-bottom:14px}
+#res #r2.big small{font-size:18px;opacity:.8;margin-left:4px}
+#res .rs{display:flex;gap:8px;justify-content:center;margin:0 0 18px}
+#res .rs span{flex:1;background:#0E0C14;border:1.5px solid rgba(245,194,66,.3);border-radius:14px;padding:8px 6px;font-size:13px;opacity:.95}
+#res .rs b{display:block;font-size:19px;color:var(--gold2);margin-top:2px}
+#res .rs .eg,#res .rs .eb{width:1.2em;height:1.2em}
+#res .r3{font-size:13px!important;opacity:.7;margin:-8px 0 16px!important}
+#res .btn+.btn{margin-top:10px}
+#res .btn.ghost{background:transparent;color:var(--gold2);border:1.5px solid rgba(245,194,66,.45);box-shadow:none}
+#res .sp2{position:absolute;width:6px;height:6px;border-radius:2px;background:var(--gold);opacity:0;pointer-events:none;animation:rspark 1.1s ease-out forwards}
+@keyframes rfade{from{opacity:0}to{opacity:1}}
+@keyframes rpop{from{opacity:0;transform:scale(.82) translateY(14px)}to{opacity:1;transform:none}}
+@keyframes rbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes rspark{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(260deg)}}
+@media(prefers-reduced-motion:reduce){#res,#res>div,#res .ri,#res .sp2{animation:none}}
 </style></head>
 <body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-home" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 11 12 3.8 20.4 11v8.6a1 1 0 0 1-1 1H15v-5.6H9v5.6H4.6a1 1 0 0 1-1-1z"/></g></symbol>
@@ -311,7 +342,7 @@ li.mine{background:linear-gradient(90deg,rgba(245,194,66,.25),transparent)}
   <div class="row"><button class="btn" id="cash" hidden></button><button class="btn alt" id="otool" hidden></button></div>
 </section>
 
-<div id="res" hidden><div><h1 id="r1"></h1><p id="r2"></p><button class="btn" id="back">В меню</button></div></div>
+<div id="res" hidden><div id="rbox" class="ok"><div id="ri" class="ri" hidden></div><h1 id="r1"></h1><p id="r2"></p><div id="rs" class="rs" hidden></div><p id="r3" class="r3" hidden></p><button class="btn" id="again" hidden>Играть снова</button><button class="btn ghost" id="back">В меню</button></div></div>
 </main>
 
 <script src="config.js"></script>
@@ -404,8 +435,8 @@ async function push(state,winner){ // winner: undefined — партия идё�
 async function endGame(){
   if(over)return;over=true;clearInterval(pollT);ch&&sb.removeChannel(ch);
   const old=meRow.rating;await login();const d=meRow.rating-old,w=G.winner;
-  $('#r1').textContent=w==null?'Ничья':w===me.id?'Победа!':'Поражение';
-  $('#r2').textContent=`Рейтинг ${meRow.rating} (${d>=0?'+':''}${d})`;$('#res').hidden=false;
+  const win=w===me.id;
+  showRes({kind:w==null?'warn':win?'ok':'lose',icon:w==null?'🤝':win?'🏆':'💀',title:w==null?'Ничья':win?'Победа!':'Поражение',text:`${d>=0?'+':''}${d}<small>ММР</small>`,big:true,stats:[['Рейтинг',meRow.rating]]});
 }
 
 // ---------- шахматы ----------
@@ -473,6 +504,23 @@ function tapMines(i){
   push(G.state,mine.open.size>=54?me.id:undefined);
 }
 
+
+// ---------- окно результата ----------
+function showRes({kind='ok',icon='',title='',text='',big=false,stats=null,note='',again=null}={}){
+  const b=$('#rbox');b.className=kind;
+  const ri=$('#ri');ri.innerHTML=icon;ri.hidden=!icon;
+  $('#r1').textContent=title;
+  const r2=$('#r2');r2.className=big?'big':'';r2.innerHTML=text;r2.hidden=!text;
+  const rs=$('#rs');rs.innerHTML=stats?stats.map(([l,v])=>`<span>${l}<b>${v}</b></span>`).join(''):'';rs.hidden=!stats;
+  const n=$('#r3');n.textContent=note;n.hidden=!note;
+  const ag=$('#again');ag.hidden=!again;ag.onclick=again?()=>{$('#res').hidden=true;again()}:null;
+  $('#res').hidden=false;
+  b.querySelectorAll('.sp2').forEach(e=>e.remove());
+  if(kind==='ok'&&!matchMedia('(prefers-reduced-motion:reduce)').matches){
+    for(let k=0;k<18;k++){const e=document.createElement('i');e.className='sp2';const a=Math.random()*6.28,d=70+Math.random()*90;
+      e.style.cssText=`left:50%;top:92px;--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d-20}px;animation-delay:${Math.random()*.25}s;background:${k%2?'var(--gold2)':'var(--gold)'}`;b.appendChild(e)}
+  }
+}
 // ---------- оффлайн: Мины и Сапёр ----------
 const rng=m=>m<3?[1,5]:[m,2*m];
 const rew=(m,g)=>{const [a,b]=rng(m);return a+Math.round((b-a)*Math.min(1,g/10))};
@@ -519,13 +567,25 @@ function tapGem(i){
   drawGems();
 }
 async function cashOut(){
-  if(O.over||!O.gems)return;
-  const g=O.gems,m=O.m;O.over=true;O.won=true;drawGems();
-  const {data}=await sb.rpc('offline_reward',{p_player:me.id,p_mines:m,p_gems:g});
-  await login();
-  $('#r1').textContent='Забрал награду!';
-  $('#r2').textContent=data?`+${data} ММР · всего ${meRow.rating}`:'ММР не начислен: слишком часто, подожди немного';
-  $('#res').hidden=false;
+  if(O.over||!O.gems||O.busy)return;
+  const g=O.gems,m=O.m;O.busy=true;
+  const c=$('#cash');c.disabled=true;c.textContent='Начисляю…';
+  let data=null,error=null;
+  try{({data,error}=await sb.rpc('offline_reward',{p_player:me.id,p_mines:m,p_gems:g}))}catch(e){error=e}
+  O.over=true;O.won=true;O.busy=false;drawGems();
+  const v=Array.isArray(data)?data[0]:data;
+  const n=(v&&typeof v==='object')?Number(Object.values(v)[0]):Number(v);
+  const stats=[['<i class="eg"></i> Алмазов',g],['<i class="eb"></i> Мин',m]];
+  const again=()=>gemSetup(m);
+  if(error){
+    console.error('offline_reward',error);
+    showRes({kind:'err',icon:'⚠️',title:'Не удалось начислить',text:'Связь с сервером подвела. Попробуй ещё раз чуть позже.',stats,note:String(error.message||error.code||'').slice(0,120),again});
+  }else if(Number.isFinite(n)&&n>0){
+    await login();
+    showRes({kind:'ok',icon:'<i class="eg"></i>',title:'Награда твоя!',text:`+${n}<small>ММР</small>`,big:true,stats:[...stats,['Всего ММР',meRow.rating]],again});
+  }else{
+    showRes({kind:'warn',icon:'⏳',title:'Награда на паузе',text:'Забирать награду можно не слишком часто. Подожди немного и сыграй снова — ММР начислится.',stats,again});
+  }
 }
 
 // Сапёр: 8×8, 10 мин, первый ход безопасный
