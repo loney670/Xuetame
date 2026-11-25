@@ -344,8 +344,8 @@ async function login(){
   fillProfile();
 }
 async function loadTop(){
-  let r=await sb.from('profiles').select('id,name,rating,avatar').or(PLAYED).order('rating',{ascending:false}).limit(100);
-  if(r.error)r=await sb.from('profiles').select('id,name,rating').or(PLAYED).order('rating',{ascending:false}).limit(100);
+  let r=await sb.from('profiles').select('id,name,rating,avatar').or(PLAYED).order('rating',{ascending:false}).order('id',{ascending:true}).limit(100);
+  if(r.error)r=await sb.from('profiles').select('id,name,rating').or(PLAYED).order('rating',{ascending:false}).order('id',{ascending:true}).limit(100);
   const L=r.data||[];
   $('#pod').innerHTML=[1,0,2].map(i=>{const p=L[i];if(!p)return '<div></div>';
     return `<div class="pc p${i+1}${p.id===me.id?' mine':''}"><div class="pa">${i===0?'<svg class="crown"><use href="#i-crown"/></svg>':''}${avh(p)}<span class="rk">${i+1}</span></div><b class="pn">${esc(p.name)}</b><i class="pr">${p.rating}<small>ММР</small></i></div>`}).join('');
@@ -580,7 +580,7 @@ async function fillProfile(){
   $('#sw').textContent=d.wins;$('#sl').textContent=d.losses;$('#sd').textContent=d.draws;
   const n=d.wins+d.losses+d.draws;$('#sr').textContent=n?Math.round(d.wins*100/n)+'%':'—';
   if(n===0)$('#rank').textContent='Сыграй первую партию, и ты появишься в топе';
-  else{const {count}=await sb.from('profiles').select('id',{count:'exact',head:true}).or(PLAYED).gt('rating',d.rating);
+  else{const {count}=await sb.from('profiles').select('id',{count:'exact',head:true}).or(PLAYED).or(`rating.gt.${d.rating},and(rating.eq.${d.rating},id.lt.${d.id})`);
     $('#rank').textContent=count==null?'':'Место в топе: '+(count+1)}
 }
 function showAv(){
