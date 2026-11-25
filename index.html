@@ -541,7 +541,7 @@ function gemSetup(m){
   $('#ob').hidden=true;$('#otool').hidden=true;$('#cash').hidden=true;$('#osx').textContent='';$('#setup').hidden=false;
   $('#setup').innerHTML=`<p class="hint">Сколько мин спрятать? Чем больше, тем выше награда.</p>
   <div class="seg">${Array.from({length:15},(_,k)=>k+1).map(n=>`<button data-m="${n}" class="${n===m?'on':''}">${n}</button>`).join('')}</div>
-  <p class="hint">Награда: <b>${rng(m)[0]}–${rng(m)[1]} ММР</b>. Чем больше <i class="eg"></i> соберёшь до выхода, тем ближе к максимуму (он после 10 <i class="eg"></i>). Попал на мину — ММР не даётся.</p>
+  <p class="hint">Собери как можно больше <i class="eg"></i> и вовремя забери. Попал на мину — игра окончена. <b>ММР за оффлайн-игры не начисляется.</b></p>
   <button class="btn" id="go">Играть</button>`;
 }
 function startGems(m){
@@ -556,9 +556,9 @@ function drawGems(){
   }
   $('#ob').innerHTML=h;
   const g=O.gems,c=$('#cash');c.hidden=false;
-  $('#osx').innerHTML=O.over?(O.won?'Ты забрал награду!':'Мина! Игра окончена'):`<i class="eg"></i> ${g} · <i class="eb"></i> ${O.m}`;
+  $('#osx').innerHTML=O.over?(O.won?'Ты забрал алмазы!':'Мина! Игра окончена'):`<i class="eg"></i> ${g} · <i class="eb"></i> ${O.m}`;
   if(O.over){c.textContent='Играть снова';c.disabled=false;c.onclick=()=>gemSetup(O.m)}
-  else{c.textContent=g?`Забрать +${rew(O.m,g)} ММР`:'Открой первую клетку';c.disabled=!g;c.onclick=cashOut}
+  else{c.textContent=g?`Забрать ${g} алмазов`:'Открой первую клетку';c.disabled=!g;c.onclick=cashOut}
 }
 function tapGem(i){
   if(O.over||O.open.has(i))return;
@@ -566,26 +566,10 @@ function tapGem(i){
   if(O.mines.has(i)){O.over=true}else O.gems++;
   drawGems();
 }
-async function cashOut(){
-  if(O.over||!O.gems||O.busy)return;
-  const g=O.gems,m=O.m;O.busy=true;
-  const c=$('#cash');c.disabled=true;c.textContent='Начисляю…';
-  let data=null,error=null;
-  try{({data,error}=await sb.rpc('offline_reward',{p_player:me.id,p_mines:m,p_gems:g}))}catch(e){error=e}
-  O.over=true;O.won=true;O.busy=false;drawGems();
-  const v=Array.isArray(data)?data[0]:data;
-  const n=(v&&typeof v==='object')?Number(Object.values(v)[0]):Number(v);
-  const stats=[['<i class="eg"></i> Алмазов',g],['<i class="eb"></i> Мин',m]];
-  const again=()=>gemSetup(m);
-  if(error){
-    console.error('offline_reward',error);
-    showRes({kind:'err',icon:'⚠️',title:'Не удалось начислить',text:'Связь с сервером подвела. Попробуй ещё раз чуть позже.',stats,note:String(error.message||error.code||'').slice(0,120),again});
-  }else if(Number.isFinite(n)&&n>0){
-    await login();
-    showRes({kind:'ok',icon:'<i class="eg"></i>',title:'Награда твоя!',text:`+${n}<small>ММР</small>`,big:true,stats:[...stats,['Всего ММР',meRow.rating]],again});
-  }else{
-    showRes({kind:'warn',icon:'⏳',title:'Награда на паузе',text:'Забирать награду можно не слишком часто. Подожди немного и сыграй снова — ММР начислится.',stats,again});
-  }
+function cashOut(){
+  if(O.over||!O.gems)return;
+  const g=O.gems,m=O.m;O.over=true;O.won=true;drawGems();
+  showRes({kind:'warn',icon:'🚫',title:'ММР не начисляется',text:'За оффлайн-игры получить ММР нельзя. Играй онлайн против соперников, чтобы расти в рейтинге.',stats:[['<i class="eg"></i> Алмазов',g],['<i class="eb"></i> Мин',m]],again:()=>gemSetup(m)});
 }
 
 // Сапёр: 8×8, 10 мин, первый ход безопасный
