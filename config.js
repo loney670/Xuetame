@@ -1,3 +1,4 @@
-window.SUPABASE_URL = "https://fnwkpkytfclgybtpcvmg.supabase.co";
-window.SUPABASE_ANON_KEY = "sb_publishable_bgQaYznjoCy95JaCdKMQhw_CNgb24-G";
-
+window.CFG = {
+  url: "https://fnwkpkytfclgybtpcvmg.supabase.co",
+  key: "sb_publishable_bgQaYznjoCy95JaCdKMQhw_CNgb24-G"
+};
